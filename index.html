@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0078d7" />
 <title>Full Clock Tool</title>
 <style>
   /* Reset & base */
@@ -220,7 +221,7 @@
 <div style="flex-grow:1; display:flex; flex-direction:column;">
 <header>
   <button id="toggleTabsBtn" aria-label="タブの表示切替" aria-expanded="true">≡</button>
-  </header>
+</header>
 
 <main>
   <section id="home" class="content active" role="tabpanel" aria-labelledby="tab-home" tabindex="0">
@@ -335,13 +336,26 @@
 </audio>
 
 <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(registration => {
+          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        })
+        .catch(err => {
+          console.log('ServiceWorker registration failed: ', err);
+        });
+    });
+  }
+</script>
+
+<script>
 (() => {
   // --- タブ管理 ---
   const tabs = document.querySelectorAll('nav.tabs button.tab');
   const contents = document.querySelectorAll('main section.content');
   const toggleTabsBtn = document.getElementById('toggleTabsBtn');
   const navTabs = document.querySelector('nav.tabs');
-  // const dateTimeWrapper = document.getElementById('dateTimeWrapper'); // 削除
   const currentTimeElem = document.getElementById('currentTime');
   const currentDateElem = document.getElementById('currentDate');
 
@@ -361,11 +375,6 @@
       tab.setAttribute('aria-selected', selected.toString());
       tab.tabIndex = selected ? 0 : -1;
     });
-    
-    // バグ修正:
-    // 時刻表示をヘッダーに移動するロジックを削除しました。
-    // 時刻表示 (currentTimeElem, currentDateElem) は
-    // #home セクションの一部として、セクションの表示・非表示と連動します。
     
     if (clickedTab) clickedTab.focus();
   }
