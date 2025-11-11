@@ -1,60 +1,45 @@
-const CACHE_NAME = 'full-clock-tool-cache-v1';
-// キャッシュするファイルのリスト
+// キャッシュのバージョン (名前を変更して強制的に更新)
+const CACHE_NAME = 'full-clock-tool-cache-v2';
+
+// ★★★修正点★★★
+// キャッシュするファイルを、PWAインストールに必須のローカルファイルのみに限定します。
+// (外部の音声ファイルやアイコンを除外)
 const urlsToCache = [
   './full_clock_tool.html',
   './manifest.json',
-  // マニフェストで使用しているアイコンもキャッシュします
-  'https://www.gstatic.com/android/keyboard/emojikit/v20210831/1F553/1F553.svg',
-  // アプリが使用する音声ファイルもキャッシュに追加します（オフラインで音が鳴るように）
-  'https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg',
-  'https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.mp3',
-  'https://actions.google.com/sounds/v1/alarms/fire_pager_alert.ogg',
-  'https://actions.google.com/sounds/v1/alarms/fire_pager_alert.mp3'
+  './sw.js' // Service Worker自体もキャッシュ対象に含めます
 ];
 
 // 1. インストールイベント
-// Service Workerがインストールされたときに、コアファイルをキャッシュします
 self.addEventListener('install', event => {
+  console.log('Service Worker installing (v2)...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache');
-        // 指定されたファイルをすべてキャッシュに追加します
-        // addAllはアトミックです（1つでも失敗すると全体が失敗します）
-        return cache.addAll(urlsToCache).catch(err => {
-            console.error('Failed to cache urls:', err);
-        });
+        console.log('Opened cache:', CACHE_NAME);
+        // ローカルファイルのみをキャッシュ
+        return cache.addAll(urlsToCache);
+      })
+      .then(() => {
+        console.log('Core files cached successfully.');
+        // インストールが完了したら、古いSWがいても即座に有効化(activate)に進む
+        return self.skipWaiting();
+      })
+      .catch(err => {
+        // キャッシュに失敗した場合、インストールは失敗する
+        console.error('Cache addAll failed:', err);
       })
   );
 });
 
-// 2. フェッチイベント
-// ページがリクエスト（fetch）を行うたびに発生します
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    // まずキャッシュ内にリクエストと一致するものがあるか確認します
-    caches.match(event.request)
-      .then(response => {
-        // キャッシュにあれば、キャッシュからレスポンスを返します
-        if (response) {
-          return response;
-        }
-        
-        // キャッシュになければ、ネットワークにリクエストしに行きます
-        return fetch(event.request).catch(() => {
-            // ネットワークリクエストが失敗した場合（オフライン時など）
-            // 代替の応答を返すことができますが、ここでは単純にエラーを返します。
-            console.warn('Fetch failed, resource not in cache:', event.request.url);
-        });
-      }
-    )
-  );
-});
-
-// 3. アクティベートイベント
-// 古いキャッシュを削除するために使われます
+// 2. アクティベートイベント
 self.addEventListener('activate', event => {
-  console.log('Service worker activating...');
+  console.log('Service worker activating (v2)...');
+  
+  // skipWaiting()から来た新しいSWが即座にページを制御できるようにする
+  event.waitUntil(self.clients.claim()); 
+  
+  // 古いキャッシュ（v1など）を削除
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -62,10 +47,53 @@ self.addEventListener('activate', event => {
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
             // このキャッシュ名がホワイトリストになければ削除
+            console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     })
+  );
+});
+
+// 3. フェッチイベント (Cache First, Network Fallback)
+// ネットワークリクエストが発生するたびに実行されます
+self.addEventListener('fetch', event => {
+  // GETリクエスト以外はブラウザのデフォルトに任せる
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  event.respondWith(
+    // 1. まずキャッシュから探す
+    caches.match(event.request)
+      .then(cachedResponse => {
+        
+        // 2. キャッシュにあれば、それを返す
+        if (cachedResponse) {
+          // console.log('Serving from cache:', event.request.url);
+          return cachedResponse;
+        }
+
+        // 3. キャッシュになければ、ネットワークに取りに行く
+        // console.log('Fetching from network:', event.request.url);
+        return fetch(event.request).then(
+          networkResponse => {
+            // ネットワークから取得成功
+            
+            // ★重要★
+            // 外部リソース（音声ファイルやアイコン）は、ここで初めてネットワークから取得されます。
+            // これらを動的にキャッシュすることも可能ですが、
+            // まずはインストールを優先するため、ここではキャッシュせず、応答をそのまま返します。
+            
+            return networkResponse;
+          }
+        ).catch(error => {
+          // 4. ネットワークも失敗した場合（オフライン時）
+          console.warn('Fetch failed, resource not in cache:', event.request.url, error);
+          // (オプション) ここでオフライン用の代替ページや画像を返すこともできます
+        });
+      }
+    )
   );
 });
