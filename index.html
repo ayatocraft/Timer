@@ -318,25 +318,58 @@ function saveTimers(){ localStorage.setItem('timers',JSON.stringify(timers)); }
 function saveTimerHistory(){ localStorage.setItem('timerHistory',JSON.stringify(timerHistory)); }
 
 function renderTimers(){
-    const container=document.getElementById('timersList'); container.innerHTML='';
+    const container=document.getElementById('timersList'); 
+    container.innerHTML='';
     timers.forEach((t,i)=>{
-        const div=document.createElement('div'); div.className='timer-item';
-        const label=document.createElement('span'); label.textContent=t.label||`タイマー${i+1}`;
-        const progress=document.createElement('div'); progress.className='timer-progress';
-        const bar=document.createElement('div'); bar.className='progress-bar';
-        bar.style.width=`${100*(1-(t.remaining/t.total))}%`; progress.appendChild(bar);
-        const controls=document.createElement('div'); controls.className='timer-controls';
-        const startBtn=document.createElement('button'); startBtn.textContent=t.running?'一時停止':'開始';
+        const div=document.createElement('div'); 
+        div.className='timer-item';
+        
+        // ラベル
+        const label=document.createElement('span'); 
+        label.textContent=t.label||`タイマー${i+1}`;
+        
+        // 残り時間
+        const timeSpan = document.createElement('span');
+        timeSpan.textContent = formatTimerTime(t.remaining);
+        timeSpan.style.marginLeft = '0.5rem';
+        
+        // プログレスバー
+        const progress=document.createElement('div'); 
+        progress.className='timer-progress';
+        const bar=document.createElement('div'); 
+        bar.className='progress-bar';
+        bar.style.width=`${100*(1-(t.remaining/t.total))}%`; 
+        progress.appendChild(bar);
+        
+        // コントロール
+        const controls=document.createElement('div'); 
+        controls.className='timer-controls';
+        const startBtn=document.createElement('button'); 
+        startBtn.textContent=t.running?'一時停止':'開始';
         startBtn.addEventListener('click',()=>{
             t.running=!t.running; t.lastUpdate=Date.now(); renderTimers(); saveTimers();
         });
-        const deleteBtn=document.createElement('button'); deleteBtn.textContent='削除';
+        const deleteBtn=document.createElement('button'); 
+        deleteBtn.textContent='削除';
         deleteBtn.addEventListener('click',()=>{ timers.splice(i,1); renderTimers(); saveTimers(); });
         controls.appendChild(startBtn); controls.appendChild(deleteBtn);
-        div.appendChild(label); div.appendChild(progress); div.appendChild(controls);
+        
+        div.appendChild(label);
+        div.appendChild(timeSpan);  // ←残り時間を追加
+        div.appendChild(progress);
+        div.appendChild(controls);
         container.appendChild(div);
     });
 }
+
+// 残り時間を mm:ss 形式にする関数
+function formatTimerTime(sec){
+    sec = Math.max(0, Math.ceil(sec));
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${padZero(m)}:${padZero(s)}`;
+}
+
 
 function renderTimerHistory(){
     const container=document.getElementById('timerHistory'); container.innerHTML='';
@@ -458,3 +491,4 @@ requestAnimationFrame(mainLoop);
 </script>
 </body>
 </html>
+
