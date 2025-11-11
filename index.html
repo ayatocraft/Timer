@@ -1,452 +1,460 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Full Clock Tool(build 25.11.11)</title>
 <style>
-/* --- 共通スタイル --- */
+/* Reset & base */
 * { box-sizing: border-box; }
-body { margin:0; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; display:flex; height:100vh; overflow:hidden; background:#fff; color:#000; }
+body { margin:0; padding:0; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:#fff; color:#000; display:flex; height:100vh; overflow:hidden; }
 body.dark { background:#121212; color:#fff; }
 button { cursor:pointer; font-family:inherit; font-size:1rem; }
 button:disabled { opacity:0.5; cursor:default; }
 
-/* --- タブ --- */
-nav.tabs { display:flex; flex-direction:column; width:240px; border-right:1px solid #ccc; background:#f0f0f0; transition:width 0.3s ease; }
+/* ナビタブ */
+nav.tabs { display:flex; flex-direction:column; background:#f0f0f0; border-right:1px solid #ccc; width:240px; transition:width 0.3s ease; }
 body.dark nav.tabs { background:#222; border-color:#444; }
 nav.tabs.hidden { display:none; }
 nav.tabs button.tab { background:none; border:none; padding:1rem 1.5rem; text-align:left; border-bottom:1px solid #ccc; color:inherit; }
 body.dark nav.tabs button.tab { border-color:#444; }
-nav.tabs button.tab.active { background:#0078d7; color:#fff; font-weight:bold; }
+nav.tabs button.tab.active { background:#0078d7; color:white; font-weight:bold; }
 nav.tabs button.tab:focus-visible { outline:2px solid #0078d7; }
 
-/* --- ヘッダー --- */
-header { display:flex; align-items:center; justify-content:space-between; height:44px; padding:0 1rem; background:#0078d7; color:#fff; flex-shrink:0; }
+/* ヘッダー */
+header { display:flex; align-items:center; justify-content:space-between; padding:0 1rem; height:44px; background:#0078d7; color:#fff; flex-shrink:0; }
 #toggleTabsBtn { background:none; border:none; font-size:1.6rem; color:white; }
 #toggleTabsBtn:focus-visible { outline:2px solid #fff; }
 
-/* --- メイン --- */
+/* メイン */
 main { flex-grow:1; overflow-y:auto; padding:1rem; }
 section.content { display:none; }
 section.content.active { display:block; }
 h1 { margin-top:0; }
 
-/* --- ホーム時刻 --- */
-#dateTimeWrapper { text-align:center; user-select:none; font-weight:bold; flex-grow:1; }
-#currentTime { font-size:1.8rem; line-height:1.2; }
-#currentDate { font-size:1.2rem; line-height:1.2; opacity:0.8; }
+/* ホーム */
+#dateTimeWrapper { font-weight:bold; color:inherit; flex-grow:1; text-align:center; user-select:none; }
+#currentTime,#currentDate { line-height:1.2; }
+#currentTime { font-size:1.8rem; }
+#currentDate { font-size:1.2rem; opacity:0.8; }
 
-/* --- 入力フォーム --- */
+/* 入力フォーム */
 .input-group { margin:0.5rem 0; display:flex; gap:0.5rem; flex-wrap:wrap; }
-input, textarea, select { font-family:inherit; font-size:1rem; padding:0.3rem 0.5rem; border:1px solid #ccc; border-radius:3px; flex-grow:1; }
-body.dark input, body.dark textarea, body.dark select { background:#222; border-color:#555; color:#eee; }
+input[type=number], input[type=text], textarea, select { font-family:inherit; font-size:1rem; padding:0.3rem 0.5rem; border:1px solid #ccc; border-radius:3px; flex-grow:1; }
+body.dark input[type=number], body.dark input[type=text], body.dark textarea, body.dark select { background:#222; border-color:#555; color:#eee; }
 textarea { resize:vertical; min-height:6rem; }
 label { font-weight:normal; user-select:none; }
 
-/* --- リスト --- */
-#timersList, #timerHistory, #alarmList, #lapList { margin-top:0.5rem; max-height:250px; overflow-y:auto; border:1px solid #ccc; border-radius:4px; padding:0.5rem; background:#fafafa; color:#000; }
-body.dark #timersList, body.dark #timerHistory, body.dark #alarmList, body.dark #lapList { background:#222; border-color:#444; color:#fff; }
-.timer-item, .alarm-item, .lap-item { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.3rem; padding:0.3rem; border-bottom:1px solid #ddd; }
-body.dark .timer-item, body.dark .alarm-item, body.dark .lap-item { border-color:#444; }
-.timer-item:last-child, .alarm-item:last-child, .lap-item:last-child { border-bottom:none; }
+/* リスト */
+#timersList,#timerHistory,#alarmList,#lapList { margin-top:0.5rem; max-height:250px; overflow-y:auto; border:1px solid #ccc; border-radius:4px; padding:0.5rem; background:#fafafa; color:#000; }
+body.dark #timersList,body.dark #timerHistory,body.dark #alarmList,body.dark #lapList { background:#222; border-color:#444; color:#fff; }
+.timer-item,.alarm-item,.lap-item { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.3rem; padding:0.3rem; border-bottom:1px solid #ddd; }
+body.dark .timer-item,body.dark .alarm-item,body.dark .lap-item { border-color:#444; }
+.timer-item:last-child,.alarm-item:last-child,.lap-item:last-child { border-bottom:none; }
+.timer-item span,.alarm-item span { flex-shrink:0; }
+.timer-controls button,.alarm-item button { margin-left:0.3rem; }
 
-/* --- プログレスバー --- */
+/* プログレスバー */
 .timer-progress { flex-grow:1; margin:0 0.5rem; background:#ddd; border-radius:3px; height:12px; overflow:hidden; }
 body.dark .timer-progress { background:#444; }
 .progress-bar { background:#0078d7; height:100%; transition:width 0.4s linear; }
 
-/* --- ストップウォッチ --- */
+/* ストップウォッチ */
 #stopwatchDisplay { font-size:2rem; font-weight:bold; text-align:center; margin-bottom:0.5rem; }
 
-/* --- フォーカス --- */
+/* アクセシビリティ */
 [tabindex="0"]:focus { outline:2px solid #0078d7; }
 </style>
 </head>
 <body>
 <nav class="tabs" aria-label="メインナビゲーション">
-  <button id="tab-home" class="tab active" role="tab" aria-selected="true" tabindex="0">ホーム</button>
-  <button id="tab-timer" class="tab" role="tab" aria-selected="false" tabindex="-1">タイマー</button>
-  <button id="tab-alarm" class="tab" role="tab" aria-selected="false" tabindex="-1">アラーム</button>
-  <button id="tab-stopwatch" class="tab" role="tab" aria-selected="false" tabindex="-1">ストップウォッチ</button>
-  <button id="tab-settings" class="tab" role="tab" aria-selected="false" tabindex="-1">設定</button>
+<button id="tab-home" class="tab active" role="tab" aria-selected="true" tabindex="0">ホーム</button>
+<button id="tab-timer" class="tab" role="tab" aria-selected="false" tabindex="-1">タイマー</button>
+<button id="tab-alarm" class="tab" role="tab" aria-selected="false" tabindex="-1">アラーム</button>
+<button id="tab-stopwatch" class="tab" role="tab" aria-selected="false" tabindex="-1">ストップウォッチ</button>
+<button id="tab-settings" class="tab" role="tab" aria-selected="false" tabindex="-1">設定</button>
 </nav>
-
 <div style="flex-grow:1; display:flex; flex-direction:column;">
 <header>
-  <button id="toggleTabsBtn" aria-label="タブの表示切替" aria-expanded="true">≡</button>
-  <div id="dateTimeWrapper" aria-live="polite" aria-atomic="true">
-    <div id="currentTime" aria-label="現在時刻"></div>
-    <div id="currentDate" aria-label="現在日付"></div>
-  </div>
+<button id="toggleTabsBtn" aria-label="タブの表示切替" aria-expanded="true">≡</button>
+<div id="dateTimeWrapper" aria-live="polite" aria-atomic="true"></div>
 </header>
-
 <main>
-  <!-- ホーム -->
-  <section id="home" class="content active" role="tabpanel" aria-labelledby="tab-home" tabindex="0">
-    <h1>ホーム</h1>
-  </section>
+<section id="home" class="content active" role="tabpanel" aria-labelledby="tab-home" tabindex="0">
+<h1>ホーム</h1>
+<div id="currentTime" aria-label="現在時刻"></div>
+<div id="currentDate" aria-label="現在日付"></div>
+</section>
 
-  <!-- タイマー -->
-  <section id="timer" class="content" role="tabpanel" aria-labelledby="tab-timer" tabindex="-1">
-    <h1>タイマー</h1>
-    <form id="timerForm" aria-label="タイマー追加フォーム">
-      <div class="input-group"><input type="text" id="timerLabel" placeholder="ラベル（任意）" aria-label="タイマーラベル"></div>
-      <div class="input-group" style="gap:0.2rem;">
-        <label for="timerMinutes">分</label><input type="number" id="timerMinutes" min="0" max="999" value="0" aria-label="分">
-        <label for="timerSeconds">秒</label><input type="number" id="timerSeconds" min="0" max="59" value="10" aria-label="秒">
-      </div>
-      <div class="input-group"><button type="submit">追加して開始</button></div>
-    </form>
-    <div id="timersList" aria-live="polite" aria-atomic="true"></div>
-    <h2>タイマー履歴</h2>
-    <div id="timerHistory" aria-live="polite" aria-atomic="true" tabindex="0"></div>
-  </section>
+<section id="timer" class="content" role="tabpanel" aria-labelledby="tab-timer" tabindex="-1">
+<h1>タイマー</h1>
+<form id="timerForm" aria-label="タイマー追加フォーム">
+<div class="input-group">
+<input type="text" id="timerLabel" placeholder="ラベル（任意）" aria-label="タイマーラベル" />
+</div>
+<div class="input-group" style="gap:0.2rem;">
+<label for="timerMinutes">分</label>
+<input type="number" id="timerMinutes" min="0" max="999" value="0" aria-label="分" />
+<label for="timerSeconds">秒</label>
+<input type="number" id="timerSeconds" min="0" max="59" value="10" aria-label="秒" />
+</div>
+<div class="input-group">
+<button type="submit">追加して開始</button>
+</div>
+</form>
+<div id="timersList" aria-live="polite" aria-atomic="true"></div>
+<h2>タイマー履歴</h2>
+<div id="timerHistory" aria-live="polite" aria-atomic="true" tabindex="0"></div>
+</section>
 
-  <!-- アラーム -->
-  <section id="alarm" class="content" role="tabpanel" aria-labelledby="tab-alarm" tabindex="-1">
-    <h1>アラーム</h1>
-    <form id="alarmForm" aria-label="アラーム追加フォーム">
-      <div class="input-group" style="gap:0.2rem;">
-        <label for="alarmHour">時</label><input type="number" id="alarmHour" min="0" max="23" placeholder="00" aria-label="時">
-        <label for="alarmMinute">分</label><input type="number" id="alarmMinute" min="0" max="59" placeholder="00" aria-label="分">
-        <label for="alarmSecond">秒</label><input type="number" id="alarmSecond" min="0" max="59" placeholder="00" value="0" aria-label="秒">
-      </div>
-      <div class="input-group"><input type="text" id="alarmLabel" placeholder="ラベル（任意）" aria-label="アラームラベル"></div>
-      <div class="input-group"><button type="submit">追加</button></div>
-    </form>
-    <div id="alarmList" aria-live="polite" aria-atomic="true"></div>
-  </section>
+<section id="alarm" class="content" role="tabpanel" aria-labelledby="tab-alarm" tabindex="-1">
+<h1>アラーム</h1>
+<form id="alarmForm" aria-label="アラーム追加フォーム">
+<div class="input-group" style="gap:0.2rem;">
+<label for="alarmHour">時</label>
+<input type="number" id="alarmHour" min="0" max="23" placeholder="00" aria-label="時" />
+<label for="alarmMinute">分</label>
+<input type="number" id="alarmMinute" min="0" max="59" placeholder="00" aria-label="分" />
+<label for="alarmSecond">秒</label>
+<input type="number" id="alarmSecond" min="0" max="59" placeholder="00" aria-label="秒" value="0" />
+</div>
+<div class="input-group">
+<input type="text" id="alarmLabel" placeholder="ラベル（任意）" aria-label="アラームラベル" />
+</div>
+<div class="input-group">
+<button type="submit">追加</button>
+</div>
+</form>
+<div id="alarmList" aria-live="polite" aria-atomic="true"></div>
+</section>
 
-  <!-- ストップウォッチ -->
-  <section id="stopwatch" class="content" role="tabpanel" aria-labelledby="tab-stopwatch" tabindex="-1">
-    <h1>ストップウォッチ</h1>
-    <div id="stopwatchDisplay" aria-live="polite" aria-atomic="true">00:00:00.000</div>
-    <div class="input-group" role="group" aria-label="ストップウォッチ操作ボタン">
-      <button id="startStopwatchBtn">開始</button>
-      <button id="pauseStopwatchBtn" disabled>一時停止</button>
-      <button id="resetStopwatchBtn" disabled>リセット</button>
-      <button id="lapStopwatchBtn" disabled>ラップ</button>
-    </div>
-    <div id="lapList" aria-live="polite" aria-label="ラップタイム一覧" tabindex="0"></div>
-  </section>
+<section id="stopwatch" class="content" role="tabpanel" aria-labelledby="tab-stopwatch" tabindex="-1">
+<h1>ストップウォッチ</h1>
+<div id="stopwatchDisplay" aria-live="polite" aria-atomic="true">00:00:00.000</div>
+<div class="input-group" role="group" aria-label="ストップウォッチ操作ボタン">
+<button id="startStopwatchBtn">開始</button>
+<button id="pauseStopwatchBtn" disabled>一時停止</button>
+<button id="resetStopwatchBtn" disabled>リセット</button>
+<button id="lapStopwatchBtn" disabled>ラップ</button>
+</div>
+<div id="lapList" aria-live="polite" aria-label="ラップタイム一覧" tabindex="0"></div>
+</section>
 
-  <!-- 設定 -->
-  <section id="settings" class="content" role="tabpanel" aria-labelledby="tab-settings" tabindex="-1">
-    <h1>設定</h1>
-    <fieldset>
-      <legend>テーマ</legend>
-      <div class="input-group" role="radiogroup" aria-label="テーマ切替">
-        <label><input type="radio" name="theme" value="light"> ライト</label>
-        <label><input type="radio" name="theme" value="dark"> ダーク</label>
-      </div>
-    </fieldset>
-    <fieldset>
-      <legend>カスタムテキスト</legend>
-      <textarea id="customTextArea" rows="6" placeholder="ここにテキストを入力して保存してください。" aria-label="カスタムテキスト"></textarea>
-      <div class="input-group" style="margin-top:8px;">
-        <button id="saveCustomTextBtn">保存</button>
-        <button id="clearCustomTextBtn">クリア</button>
-      </div>
-    </fieldset>
-    <fieldset>
-      <legend>タイマー音設定</legend>
-      <div class="input-group">
-        <select id="timerSoundSelect" aria-label="タイマー音選択">
-          <option value="beep1">ビープ1</option>
-          <option value="beep2">ビープ2</option>
-          <option value="chime">チャイム</option>
-          <option value="none">なし</option>
-        </select>
-      </div>
-    </fieldset>
-    <fieldset>
-      <legend>アラーム音設定</legend>
-      <div class="input-group">
-        <select id="alarmSoundSelect" aria-label="アラーム音選択">
-          <option value="ring1">ベル1</option>
-          <option value="ring2">ベル2</option>
-          <option value="chime">チャイム</option>
-          <option value="none">なし</option>
-        </select>
-      </div>
-    </fieldset>
-    <div style="margin-top:1rem;">
-      <button id="clearAllHistoryBtn" style="background:#c33;color:#fff;border:none;padding:0.5rem 1rem;border-radius:4px;">履歴全削除</button>
-    </div>
-  </section>
+<section id="settings" class="content" role="tabpanel" aria-labelledby="tab-settings" tabindex="-1">
+<h1>設定</h1>
+<fieldset>
+<legend>テーマ</legend>
+<div class="input-group" role="radiogroup" aria-label="テーマ切替">
+<label><input type="radio" name="theme" value="light" /> ライト</label>
+<label><input type="radio" name="theme" value="dark" /> ダーク</label>
+</div>
+</fieldset>
+<fieldset>
+<legend>カスタムテキスト</legend>
+<textarea id="customTextArea" rows="6" placeholder="ここにテキストを入力して保存してください。" aria-label="カスタムテキスト"></textarea>
+<div class="input-group" style="margin-top:8px;">
+<button id="saveCustomTextBtn">保存</button>
+<button id="clearCustomTextBtn">クリア</button>
+</div>
+</fieldset>
+<fieldset>
+<legend>タイマー音設定</legend>
+<div class="input-group">
+<select id="timerSoundSelect" aria-label="タイマー音選択">
+<option value="beep1">ビープ1</option>
+<option value="beep2">ビープ2</option>
+<option value="chime">チャイム</option>
+<option value="none">なし</option>
+</select>
+</div>
+</fieldset>
+<fieldset>
+<legend>アラーム音設定</legend>
+<div class="input-group">
+<select id="alarmSoundSelect" aria-label="アラーム音選択">
+<option value="ring1">ベル1</option>
+<option value="ring2">ベル2</option>
+<option value="chime">チャイム</option>
+<option value="none">なし</option>
+</select>
+</div>
+</fieldset>
+<div style="margin-top:1rem;">
+<button id="clearAllHistoryBtn" style="background:#c33;color:#fff;border:none;padding:0.5rem 1rem;border-radius:4px;">履歴全削除</button>
+</div>
+</section>
 </main>
 </div>
 
-<!-- サウンド -->
-<audio id="timerAudio" preload="auto"></audio>
-<audio id="alarmAudio" preload="auto"></audio>
+<audio id="timerAudio" preload="auto">
+<source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg" />
+<source src="https://actions.google.com/sounds/v1/alarms/beep_short.mp3" type="audio/mpeg" />
+</audio>
+<audio id="alarmAudio" preload="auto">
+<source src="https://actions.google.com/sounds/v1/alarms/bugle_tune.ogg" type="audio/ogg" />
+<source src="https://actions.google.com/sounds/v1/alarms/bugle_tune.mp3" type="audio/mpeg" />
+</audio>
 
 <script>
 (() => {
-  // --- タブ ---
-  const tabs = document.querySelectorAll('nav.tabs button.tab');
-  const contents = document.querySelectorAll('main section.content');
-  const toggleTabsBtn = document.getElementById('toggleTabsBtn');
-  const navTabs = document.querySelector('nav.tabs');
-  const dateTimeWrapper = document.getElementById('dateTimeWrapper');
-  const currentTimeElem = document.getElementById('currentTime');
-  const currentDateElem = document.getElementById('currentDate');
+// --- 通知許可 ---
+if (Notification.permission !== "granted") {
+    Notification.requestPermission();
+}
 
-  function showTab(id, clickedTab=null){
+// --- タブ管理 ---
+const tabs = document.querySelectorAll('nav.tabs button.tab');
+const contents = document.querySelectorAll('main section.content');
+const toggleTabsBtn = document.getElementById('toggleTabsBtn');
+const navTabs = document.querySelector('nav.tabs');
+const dateTimeWrapper = document.getElementById('dateTimeWrapper');
+const currentTimeElem = document.getElementById('currentTime');
+const currentDateElem = document.getElementById('currentDate');
+
+function showTab(id, clickedTab=null) {
     contents.forEach(section=>{
-      section.classList.toggle('active', section.id===id);
-      section.setAttribute('tabindex', section.id===id?'0':'-1');
+        if(section.id===id){ section.classList.add('active'); section.setAttribute('tabindex','0'); }
+        else{ section.classList.remove('active'); section.setAttribute('tabindex','-1'); }
     });
     tabs.forEach(tab=>{
-      const selected = tab.id==='tab-'+id;
-      tab.classList.toggle('active', selected);
-      tab.setAttribute('aria-selected', selected.toString());
-      tab.tabIndex = selected?0:-1;
+        const selected = tab.id==='tab-'+id;
+        tab.classList.toggle('active',selected);
+        tab.setAttribute('aria-selected',selected.toString());
+        tab.tabIndex = selected?0:-1;
     });
-  }
+    if(id==='home'){ dateTimeWrapper.style.display=''; currentTimeElem.style.display=''; currentDateElem.style.display=''; dateTimeWrapper.appendChild(currentTimeElem); dateTimeWrapper.appendChild(currentDateElem); }
+    else{ dateTimeWrapper.style.display=''; currentTimeElem.style.display='none'; currentDateElem.style.display='none'; }
+    if(clickedTab) clickedTab.focus();
+}
 
-  tabs.forEach(tab=>{
-    tab.addEventListener('click', ()=>showTab(tab.id.replace('tab-',''), tab));
+tabs.forEach(tab=>{
+    tab.addEventListener('click',e=>{ e.preventDefault(); showTab(tab.id.replace('tab-',''), tab); });
     tab.addEventListener('keydown', e=>{
-      let idx=Array.from(tabs).indexOf(e.target);
-      if(e.key==='ArrowRight'){ e.preventDefault(); tabs[(idx+1)%tabs.length].focus(); }
-      else if(e.key==='ArrowLeft'){ e.preventDefault(); tabs[(idx-1+tabs.length)%tabs.length].focus(); }
+        let idx = Array.from(tabs).indexOf(e.target);
+        if(e.key==='ArrowRight'){ e.preventDefault(); let next=(idx+1)%tabs.length; tabs[next].focus(); }
+        else if(e.key==='ArrowLeft'){ e.preventDefault(); let prev=(idx-1+tabs.length)%tabs.length; tabs[prev].focus(); }
     });
-  });
+});
 
-  toggleTabsBtn.addEventListener('click', ()=>{
-    navTabs.classList.toggle('hidden');
-    toggleTabsBtn.setAttribute('aria-expanded', !navTabs.classList.contains('hidden'));
-  });
+// --- タブ表示切替 ---
+let tabsVisible = true;
+toggleTabsBtn.addEventListener('click', () => {
+    tabsVisible = !tabsVisible;
+    if(tabsVisible){ navTabs.classList.remove('hidden'); toggleTabsBtn.setAttribute('aria-expanded','true'); }
+    else{ navTabs.classList.add('hidden'); toggleTabsBtn.setAttribute('aria-expanded','false'); }
+});
 
-  // --- 日付と時刻 ---
-  const WEEK_DAYS_JP=['日','月','火','水','木','金','土'];
-  function padZero(num,len=2){ return String(num).padStart(len,'0'); }
-  function updateDateTime(){
+// --- 日付と時刻 ---
+const WEEK_DAYS_JP = ['日','月','火','水','木','金','土'];
+function padZero(num,len=2){return String(num).padStart(len,'0');}
+function updateDateTime(){
     const now=new Date();
     currentTimeElem.textContent=`${padZero(now.getHours())}:${padZero(now.getMinutes())}:${padZero(now.getSeconds())}`;
     currentDateElem.textContent=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${WEEK_DAYS_JP[now.getDay()]}）`;
-  }
-  updateDateTime();
-  setInterval(updateDateTime,1000);
+}
+updateDateTime(); setInterval(updateDateTime,1000);
 
-  // --- カスタムテキスト ---
-  const customTextArea=document.getElementById('customTextArea');
-  document.getElementById('saveCustomTextBtn').addEventListener('click',()=>{
-    localStorage.setItem('customText',customTextArea.value); alert('保存しました。');
-  });
-  document.getElementById('clearCustomTextBtn').addEventListener('click',()=>{
-    if(confirm('削除しますか？')){ localStorage.removeItem('customText'); customTextArea.value=''; }
-  });
-  customTextArea.value = localStorage.getItem('customText')||'';
+// --- カスタムテキスト ---
+const customTextArea=document.getElementById('customTextArea');
+const saveCustomTextBtn=document.getElementById('saveCustomTextBtn');
+const clearCustomTextBtn=document.getElementById('clearCustomTextBtn');
+function updateCustomText(){ customTextArea.value=localStorage.getItem('customText')||''; }
+saveCustomTextBtn.addEventListener('click',()=>{ localStorage.setItem('customText',customTextArea.value); alert('カスタムテキストを保存しました。'); });
+clearCustomTextBtn.addEventListener('click',()=>{ if(confirm('カスタムテキストを削除しますか？')){ localStorage.removeItem('customText'); updateCustomText(); } });
+updateCustomText();
 
-  // --- テーマ ---
-  const themeRadios=document.querySelectorAll('input[name="theme"]');
-  function applyTheme(theme){ document.body.classList.toggle('dark', theme==='dark'); localStorage.setItem('theme',theme); }
-  const savedTheme=localStorage.getItem('theme')||'light';
-  applyTheme(savedTheme);
-  themeRadios.forEach(r=>{
-    r.checked = r.value===savedTheme;
-    r.addEventListener('change', e=>applyTheme(e.target.value));
-  });
+// --- テーマ ---
+const themeRadios=document.querySelectorAll('input[name="theme"]');
+function applyTheme(theme){ if(theme==='dark'){document.body.classList.add('dark');}else{document.body.classList.remove('dark');} localStorage.setItem('theme',theme);}
+function initTheme(){
+    const savedTheme=localStorage.getItem('theme')||'light';
+    applyTheme(savedTheme);
+    themeRadios.forEach(radio=>{ radio.checked=radio.value===savedTheme; radio.addEventListener('change',e=>applyTheme(e.target.value)); });
+}
+initTheme();
 
-  // --- 音設定 ---
-  const timerSoundSelect=document.getElementById('timerSoundSelect');
-  const alarmSoundSelect=document.getElementById('alarmSoundSelect');
-  const timerAudio=document.getElementById('timerAudio');
-  const alarmAudio=document.getElementById('alarmAudio');
+// --- 音設定 ---
+const timerSoundSelect=document.getElementById('timerSoundSelect');
+const alarmSoundSelect=document.getElementById('alarmSoundSelect');
+const timerAudio=document.getElementById('timerAudio');
+const alarmAudio=document.getElementById('alarmAudio');
 
-  function updateTimerAudio(){ 
-    switch(timerSoundSelect.value){
-      case 'beep1': timerAudio.src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"; break;
-      case 'beep2': timerAudio.src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"; break;
-      case 'chime': timerAudio.src="https://actions.google.com/sounds/v1/alarms/chime.ogg"; break;
-      case 'none': timerAudio.src=""; break;
-    } timerAudio.load();
-  }
-  function updateAlarmAudio(){ 
-    switch(alarmSoundSelect.value){
-      case 'ring1': alarmAudio.src="https://actions.google.com/sounds/v1/alarms/bugle_tune.ogg"; break;
-      case 'ring2': alarmAudio.src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"; break;
-      case 'chime': alarmAudio.src="https://actions.google.com/sounds/v1/alarms/chime.ogg"; break;
-      case 'none': alarmAudio.src=""; break;
-    } alarmAudio.load();
-  }
-
-  timerSoundSelect.value=localStorage.getItem('timerSound')||'beep1';
-  alarmSoundSelect.value=localStorage.getItem('alarmSound')||'ring1';
-  updateTimerAudio(); updateAlarmAudio();
-  timerSoundSelect.addEventListener('change',()=>{ localStorage.setItem('timerSound',timerSoundSelect.value); updateTimerAudio(); });
-  alarmSoundSelect.addEventListener('change',()=>{ localStorage.setItem('alarmSound',alarmSoundSelect.value); updateAlarmAudio(); });
-
-  // --- タイマー ---
-  let timers=JSON.parse(localStorage.getItem('timers')||'[]');
-  let timerHistory=JSON.parse(localStorage.getItem('timerHistory')||'[]');
-  const timerForm=document.getElementById('timerForm');
-  const timersList=document.getElementById('timersList');
-  const timerHistoryElem=document.getElementById('timerHistory');
-
-  function saveTimers(){ localStorage.setItem('timers',JSON.stringify(timers)); }
-  function saveTimerHistory(){ localStorage.setItem('timerHistory',JSON.stringify(timerHistory)); }
-  function notify(title,body){ if(Notification.permission==="granted") new Notification(title,{body}); }
-
-  function renderTimers(){
-    timersList.innerHTML='';
-    timers.forEach((t,idx)=>{
-      const div=document.createElement('div'); div.className='timer-item';
-      const labelSpan=document.createElement('span'); labelSpan.textContent=`${t.label||'タイマー'} (${Math.floor(t.remaining/60)}:${padZero(t.remaining%60)})`;
-      const progressDiv=document.createElement('div'); progressDiv.className='timer-progress';
-      const barDiv=document.createElement('div'); barDiv.className='progress-bar';
-      barDiv.style.width = `${100*(t.total-t.remaining)/t.total}%`;
-      progressDiv.appendChild(barDiv);
-
-      const btn=document.createElement('button'); btn.textContent='停止';
-      btn.addEventListener('click', ()=>{
-        clearInterval(t.intervalId); timers.splice(idx,1); saveTimers(); renderTimers();
-      });
-      div.appendChild(labelSpan); div.appendChild(progressDiv); div.appendChild(btn);
-      timersList.appendChild(div);
-    });
-  }
-
-  function renderTimerHistory(){
-    timerHistoryElem.innerHTML='';
-    timerHistory.forEach(t=>{
-      const div=document.createElement('div'); div.textContent=`${t.label||'タイマー'} ${t.total/60}分 終了時刻:${t.endTime}`;
-      timerHistoryElem.appendChild(div);
-    });
-  }
-
-  function startTimer(timer){
-    timer.intervalId=setInterval(()=>{
-      timer.remaining--;
-      renderTimers();
-      if(timer.remaining<=0){
-        clearInterval(timer.intervalId);
-        notify('タイマー終了',timer.label||'タイマーが終了しました');
-        if(timerAudio.src) timerAudio.play();
-        timerHistory.push({label:timer.label,total:timer.total,endTime:new Date().toLocaleString()});
-        saveTimerHistory();
-        timers.splice(timers.indexOf(timer),1); saveTimers(); renderTimers(); renderTimerHistory();
-      }
-    },1000);
-  }
-
-  timerForm.addEventListener('submit', e=>{
-    e.preventDefault();
-    const label=document.getElementById('timerLabel').value;
-    const minutes=parseInt(document.getElementById('timerMinutes').value)||0;
-    const seconds=parseInt(document.getElementById('timerSeconds').value)||0;
-    const total=minutes*60+seconds;
-    if(total<=0){ alert('0秒以上にしてください'); return; }
-    const timer={label,total,remaining:total,intervalId:null};
-    timers.push(timer); saveTimers(); renderTimers(); startTimer(timer);
-  });
-
-  renderTimers(); renderTimerHistory();
-
-  // --- アラーム ---
-  let alarms=JSON.parse(localStorage.getItem('alarms')||'[]');
-  const alarmForm=document.getElementById('alarmForm');
-  const alarmList=document.getElementById('alarmList');
-
-  function saveAlarms(){ localStorage.setItem('alarms',JSON.stringify(alarms)); }
-  function renderAlarms(){
-    alarmList.innerHTML='';
-    alarms.forEach((a,idx)=>{
-      const div=document.createElement('div'); div.className='alarm-item';
-      div.textContent=`${padZero(a.hour)}:${padZero(a.minute)}:${padZero(a.second)} ${a.label||''}`;
-      const btn=document.createElement('button'); btn.textContent='削除';
-      btn.addEventListener('click',()=>{ alarms.splice(idx,1); saveAlarms(); renderAlarms(); });
-      div.appendChild(btn); alarmList.appendChild(div);
-    });
-  }
-
-  function checkAlarms(){
-    const now=new Date();
-    alarms.forEach((a,idx)=>{
-      if(!a.triggered && a.hour===now.getHours() && a.minute===now.getMinutes() && a.second===now.getSeconds()){
-        a.triggered=true; saveAlarms(); renderAlarms();
-        notify('アラーム', a.label||'アラームが鳴りました');
-        if(alarmAudio.src) alarmAudio.play();
-      }
-    });
-  }
-  setInterval(checkAlarms,1000);
-
-  alarmForm.addEventListener('submit', e=>{
-    e.preventDefault();
-    const hour=parseInt(document.getElementById('alarmHour').value)||0;
-    const minute=parseInt(document.getElementById('alarmMinute').value)||0;
-    const second=parseInt(document.getElementById('alarmSecond').value)||0;
-    const label=document.getElementById('alarmLabel').value;
-    alarms.push({hour,minute,second,label,triggered:false}); saveAlarms(); renderAlarms();
-  });
-
-  renderAlarms();
-
-  // --- ストップウォッチ ---
-  let stopwatchInterval=null;
-  let stopwatchTime=0;
-  let laps=[];
-  const swDisplay=document.getElementById('stopwatchDisplay');
-  const startBtn=document.getElementById('startStopwatchBtn');
-  const pauseBtn=document.getElementById('pauseStopwatchBtn');
-  const resetBtn=document.getElementById('resetStopwatchBtn');
-  const lapBtn=document.getElementById('lapStopwatchBtn');
-  const lapListElem=document.getElementById('lapList');
-
-  function formatTime(ms){
-    const h=Math.floor(ms/3600000);
-    const m=Math.floor(ms/60000)%60;
-    const s=Math.floor(ms/1000)%60;
-    const msd=ms%1000;
-    return `${padZero(h)}:${padZero(m)}:${padZero(s)}.${padZero(msd,3)}`;
-  }
-  function renderStopwatch(){
-    swDisplay.textContent=formatTime(stopwatchTime);
-    lapListElem.innerHTML='';
-    laps.forEach((l,i)=>{
-      const div=document.createElement('div'); div.className='lap-item';
-      div.textContent=`Lap ${i+1}: ${formatTime(l)}`; lapListElem.appendChild(div);
-    });
-  }
-
-  startBtn.addEventListener('click',()=>{
-    if(stopwatchInterval) return;
-    const start=Date.now()-stopwatchTime;
-    stopwatchInterval=setInterval(()=>{
-      stopwatchTime=Date.now()-start;
-      renderStopwatch();
-    },33);
-    startBtn.disabled=true; pauseBtn.disabled=false; resetBtn.disabled=false; lapBtn.disabled=false;
-  });
-
-  pauseBtn.addEventListener('click',()=>{
-    clearInterval(stopwatchInterval); stopwatchInterval=null;
-    startBtn.disabled=false; pauseBtn.disabled=true;
-  });
-
-  resetBtn.addEventListener('click',()=>{
-    clearInterval(stopwatchInterval); stopwatchInterval=null; stopwatchTime=0; laps=[]; renderStopwatch();
-    startBtn.disabled=false; pauseBtn.disabled=true; resetBtn.disabled=true; lapBtn.disabled=true;
-  });
-
-  lapBtn.addEventListener('click',()=>{ laps.push(stopwatchTime); renderStopwatch(); });
-
-  // --- 履歴全削除 ---
-  document.getElementById('clearAllHistoryBtn').addEventListener('click',()=>{
-    if(confirm('タイマー履歴とアラームをすべて削除しますか？')){
-      timerHistory=[]; saveTimerHistory(); renderTimerHistory();
-      alarms=[]; saveAlarms(); renderAlarms();
+function updateTimerAudio(){
+    const val=timerSoundSelect.value;
+    switch(val){
+        case 'beep1': timerAudio.src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"; break;
+        case 'beep2': timerAudio.src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"; break;
+        case 'chime': timerAudio.src="https://actions.google.com/sounds/v1/alarms/chime.ogg"; break;
+        case 'none': default: timerAudio.src=""; break;
     }
-  });
+    timerAudio.load();
+}
+function updateAlarmAudio(){
+    const val=alarmSoundSelect.value;
+    switch(val){
+        case 'ring1': alarmAudio.src="https://actions.google.com/sounds/v1/alarms/bugle_tune.ogg"; break;
+        case 'ring2': alarmAudio.src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"; break;
+        case 'chime': alarmAudio.src="https://actions.google.com/sounds/v1/alarms/chime.ogg"; break;
+        case 'none': default: alarmAudio.src=""; break;
+    }
+    alarmAudio.load();
+}
+function initSoundSettings(){
+    const savedTimerSound=localStorage.getItem('timerSound')||'beep1';
+    const savedAlarmSound=localStorage.getItem('alarmSound')||'ring1';
+    timerSoundSelect.value=savedTimerSound;
+    alarmSoundSelect.value=savedAlarmSound;
+    updateTimerAudio(); updateAlarmAudio();
+    timerSoundSelect.addEventListener('change',()=>{ localStorage.setItem('timerSound',timerSoundSelect.value); updateTimerAudio(); });
+    alarmSoundSelect.addEventListener('change',()=>{ localStorage.setItem('alarmSound',alarmSoundSelect.value); updateAlarmAudio(); });
+}
+initSoundSettings();
 
-  // --- Notification権限 ---
-  if(Notification.permission!=="granted"){ Notification.requestPermission(); }
+// --- タイマー ---
+let timers=JSON.parse(localStorage.getItem('timers')||'[]');
+let timerHistory=JSON.parse(localStorage.getItem('timerHistory')||'[]');
+
+function saveTimers(){ localStorage.setItem('timers',JSON.stringify(timers)); }
+function saveTimerHistory(){ localStorage.setItem('timerHistory',JSON.stringify(timerHistory)); }
+
+function renderTimers(){
+    const container=document.getElementById('timersList'); container.innerHTML='';
+    timers.forEach((t,i)=>{
+        const div=document.createElement('div'); div.className='timer-item';
+        const label=document.createElement('span'); label.textContent=t.label||`タイマー${i+1}`;
+        const progress=document.createElement('div'); progress.className='timer-progress';
+        const bar=document.createElement('div'); bar.className='progress-bar';
+        bar.style.width=`${100*(1-(t.remaining/t.total))}%`; progress.appendChild(bar);
+        const controls=document.createElement('div'); controls.className='timer-controls';
+        const startBtn=document.createElement('button'); startBtn.textContent=t.running?'一時停止':'開始';
+        startBtn.addEventListener('click',()=>{
+            t.running=!t.running; t.lastUpdate=Date.now(); renderTimers(); saveTimers();
+        });
+        const deleteBtn=document.createElement('button'); deleteBtn.textContent='削除';
+        deleteBtn.addEventListener('click',()=>{ timers.splice(i,1); renderTimers(); saveTimers(); });
+        controls.appendChild(startBtn); controls.appendChild(deleteBtn);
+        div.appendChild(label); div.appendChild(progress); div.appendChild(controls);
+        container.appendChild(div);
+    });
+}
+
+function renderTimerHistory(){
+    const container=document.getElementById('timerHistory'); container.innerHTML='';
+    timerHistory.forEach((h,i)=>{
+        const div=document.createElement('div'); div.className='timer-item';
+        const d=new Date(h.time);
+        div.textContent=`${h.label||'(ラベルなし)'} - ${padZero(d.getHours())}:${padZero(d.getMinutes())}:${padZero(d.getSeconds())}`;
+        container.appendChild(div);
+    });
+}
+
+document.getElementById('timerForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    const min=Number(document.getElementById('timerMinutes').value);
+    const sec=Number(document.getElementById('timerSeconds').value);
+    const label=document.getElementById('timerLabel').value.trim();
+    const total=min*60+sec;
+    if(total<=0){ alert('0秒以上にしてください'); return; }
+    timers.push({label,total,remaining:total,running:true,lastUpdate:Date.now(),triggered:false});
+    renderTimers(); saveTimers();
+    document.getElementById('timerMinutes').value='0'; document.getElementById('timerSeconds').value='0'; document.getElementById('timerLabel').value='';
+});
+
+function notify(title,body){
+    if(Notification.permission==='granted'){ new Notification(title,{body}); }
+    else if(Notification.permission!=='denied'){ Notification.requestPermission().then(p=>{ if(p==='granted') new Notification(title,{body}); else alert(title+'\n'+body); }); }
+    else{ alert(title+'\n'+body); }
+}
+
+function tickTimers(){
+    const now=Date.now();
+    let updated=false;
+    timers.forEach(t=>{
+        if(t.running){
+            const elapsed=(now-t.lastUpdate)/1000;
+            if(elapsed>=0.2){
+                t.remaining-=elapsed;
+                if(t.remaining<=0 && !t.triggered){
+                    t.remaining=0; t.running=false; t.triggered=true;
+                    timerHistory.unshift({label:t.label,time:now}); saveTimerHistory(); renderTimerHistory();
+                    if(timerAudio.src) timerAudio.play().catch(()=>{});
+                    notify("タイマー終了", t.label||"(ラベルなし)");
+                }
+                t.lastUpdate=now; updated=true;
+            }
+        }
+    });
+    if(updated){ saveTimers(); renderTimers(); }
+}
+
+// --- アラーム ---
+let alarms=JSON.parse(localStorage.getItem('alarms')||'[]');
+function saveAlarms(){ localStorage.setItem('alarms',JSON.stringify(alarms)); }
+
+function renderAlarms(){
+    const container=document.getElementById('alarmList'); container.innerHTML='';
+    alarms.forEach((a,i)=>{
+        const div=document.createElement('div'); div.className='alarm-item';
+        const labelSpan=document.createElement('span'); labelSpan.textContent=`${padZero(a.hour)}:${padZero(a.minute)}:${padZero(a.second)} ${a.label||''}`;
+        const deleteBtn=document.createElement('button'); deleteBtn.textContent='削除';
+        deleteBtn.addEventListener('click',()=>{ alarms.splice(i,1); saveAlarms(); renderAlarms(); });
+        div.appendChild(labelSpan); div.appendChild(deleteBtn); container.appendChild(div);
+    });
+}
+document.getElementById('alarmForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    const h=Number(document.getElementById('alarmHour').value);
+    const m=Number(document.getElementById('alarmMinute').value);
+    const s=Number(document.getElementById('alarmSecond').value);
+    const label=document.getElementById('alarmLabel').value.trim();
+    if(h<0||h>23||m<0||m>59||s<0||s>59){ alert('正しい時刻を入力してください'); return; }
+    alarms.push({hour:h,minute:m,second:s,label,triggered:false}); saveAlarms(); renderAlarms();
+    document.getElementById('alarmHour').value=''; document.getElementById('alarmMinute').value=''; document.getElementById('alarmSecond').value=''; document.getElementById('alarmLabel').value='';
+});
+
+function checkAlarms(){
+    const now=new Date();
+    alarms.forEach(a=>{
+        if(!a.triggered && a.hour===now.getHours() && a.minute===now.getMinutes() && a.second===now.getSeconds()){
+            a.triggered=true; saveAlarms();
+            if(alarmAudio.src) alarmAudio.play().catch(()=>{});
+            notify("アラーム", `${a.label||"(ラベルなし)"} ${padZero(a.hour)}:${padZero(a.minute)}:${padZero(a.second)}`);
+        }
+        else if(a.triggered && (now.getHours()!==a.hour || now.getMinutes()!==a.minute || now.getSeconds()!==a.second)){ a.triggered=false; saveAlarms(); }
+    });
+}
+
+// --- ストップウォッチ ---
+let stopwatch={startTime:null,elapsed:0,running:false,laps:[]};
+const swDisplay=document.getElementById('stopwatchDisplay');
+const startBtn=document.getElementById('startStopwatchBtn');
+const pauseBtn=document.getElementById('pauseStopwatchBtn');
+const resetBtn=document.getElementById('resetStopwatchBtn');
+const lapBtn=document.getElementById('lapStopwatchBtn');
+const lapList=document.getElementById('lapList');
+
+function formatTime(ms){ const date=new Date(ms); const h=Math.floor(ms/3600000); const m=date.getMinutes(); const s=date.getSeconds(); const ms2=Math.floor(date.getMilliseconds()); return `${padZero(h)}:${padZero(m)}:${padZero(s)}.${padZero(ms2,3)}`; }
+
+function updateStopwatchDisplay(){
+    let display=stopwatch.elapsed;
+    if(stopwatch.running) display+=Date.now()-stopwatch.startTime;
+    swDisplay.textContent=formatTime(display);
+}
+function renderLaps(){
+    lapList.innerHTML=''; stopwatch.laps.forEach((l,i)=>{ const div=document.createElement('div'); div.className='lap-item'; div.textContent=`${i+1}: ${formatTime(l)}`; lapList.appendChild(div); });
+}
+startBtn.addEventListener('click',()=>{
+    if(!stopwatch.running){ stopwatch.startTime=Date.now(); stopwatch.running=true; startBtn.disabled=true; pauseBtn.disabled=false; resetBtn.disabled=false; lapBtn.disabled=false; }
+});
+pauseBtn.addEventListener('click',()=>{ if(stopwatch.running){ stopwatch.elapsed+=Date.now()-stopwatch.startTime; stopwatch.running=false; startBtn.disabled=false; pauseBtn.disabled=true; }});
+resetBtn.addEventListener('click',()=>{ stopwatch={startTime:null,elapsed:0,running:false,laps:[]}; startBtn.disabled=false; pauseBtn.disabled=true; resetBtn.disabled=true; lapBtn.disabled=true; updateStopwatchDisplay(); renderLaps(); });
+lapBtn.addEventListener('click',()=>{ let lapTime=stopwatch.elapsed; if(stopwatch.running) lapTime+=Date.now()-stopwatch.startTime; stopwatch.laps.unshift(lapTime); renderLaps(); });
+
+// --- メインループ ---
+function mainLoop(){ tickTimers(); checkAlarms(); updateStopwatchDisplay(); requestAnimationFrame(mainLoop); }
+renderTimers(); renderTimerHistory(); renderAlarms();
+requestAnimationFrame(mainLoop);
 })();
 </script>
 </body>
 </html>
-
