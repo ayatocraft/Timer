@@ -1,23 +1,21 @@
 {
   "name": "Full Clock Tool",
-  "short_name": "Clock Tool",
-  "description": "A simple clock tool with Timer, Alarm, and Stopwatch.",
-  "start_url": "./index.html",
+  "short_name": "ClockTool",
+  "description": "様々な機能を備えた多機能な時計ツール",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0078d7",
   "icons": [
     {
-      "src": "https://www.gstatic.com/android/keyboard/emojikit/v20210831/1F553/1F553.svg",
+      "src": "icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "type": "image/png"
     },
     {
-      "src": "https://www.gstatic.com/android/keyboard/emojikit/v20210831/1F553/1F553.svg",
+      "src": "icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "type": "image/png"
     }
   ]
 }
