@@ -293,6 +293,15 @@
         <label><input type="radio" name="theme" value="dark" /> ダーク</label>
       </div>
     </fieldset>
+
+    <fieldset>
+      <legend>PWA インストール</legend>
+      <div class="input-group">
+        <button id="installPwaBtn" disabled style="background:#0078d7;color:#fff;border:none;padding:0.5rem 1rem;border-radius:4px;">
+          アプリをインストール
+        </button>
+      </div>
+    </fieldset>
     <fieldset>
       <legend>About</legend>
       <p>バージョン: build 25.11.12</p>
@@ -953,6 +962,60 @@
       alert('全て削除しました。');
     }
   });
+
+  // --- PWA インストール機能の追加 ---
+  let deferredInstallPrompt = null;
+  const installPwaBtn = document.getElementById('installPwaBtn');
+
+  // 1. ブラウザがインストール可能と判断したとき (イベント捕捉)
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // ブラウザのデフォルトプロンプト表示を抑制
+    e.preventDefault();
+    // 後で使うためにイベントオブジェクトを保存
+    deferredInstallPrompt = e;
+    // ボタンを有効にする
+    installPwaBtn.disabled = false;
+    return false;
+  });
+
+  // 2. インストールボタンがクリックされたとき (プロンプト表示)
+  installPwaBtn.addEventListener('click', () => {
+    if (deferredInstallPrompt) {
+      // ボタンを一時的に無効にし、ユーザー操作を待つ
+      installPwaBtn.disabled = true;
+      
+      // 保存したイベントオブジェクトを使ってプロンプトを表示
+      deferredInstallPrompt.prompt();
+
+      // ユーザーの応答を待ち受ける
+      deferredInstallPrompt.userChoice.then((choiceResult) => {
+        console.log('User choice:', choiceResult.outcome);
+        
+        // ユーザーがインストールを選択しなかった場合
+        if (choiceResult.outcome === 'dismissed') {
+          console.log('PWA installation dismissed.');
+          // 再度インストールできる可能性があるため、プロンプトを再設定
+          deferredInstallPrompt = null; 
+          installPwaBtn.disabled = false; // ボタンを再有効化
+        } else {
+          // ユーザーがインストールを選択した場合
+          console.log('PWA installed successfully.');
+          deferredInstallPrompt = null;
+          installPwaBtn.textContent = 'インストール済み';
+        }
+      });
+    }
+  });
+
+  // 3. アプリがインストールされたとき (ボタン非表示/状態変更)
+  window.addEventListener('appinstalled', (e) => {
+    installPwaBtn.disabled = true;
+    installPwaBtn.textContent = 'インストール済み';
+    // deferredInstallPrompt が不要になったのでクリア
+    deferredInstallPrompt = null;
+  });
+  // --- /PWA インストール機能の追加 ---
+
 })();
 </script>
 </body>
