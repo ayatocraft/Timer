@@ -1,88 +1,54 @@
-// キャッシュのバージョン (v3)
-const CACHE_NAME = 'full-clock-tool-cache-v3';
-
-// キャッシュするファイル
+const CACHE_NAME = 'full-clock-tool-v1';
 const urlsToCache = [
-  './index.html', // index.html をキャッシュ
-  './manifest.json',
-  './sw.js',
-  'https://www.gstatic.com/android/keyboard/emojikit/v20210831/1F553/1F553.svg'
+  './',
+  './index.html', // index.htmlと仮定
+  './style.css', // 外部CSSがあれば（今回はHTML内なので不要だがテンプレートとして）
+  // ... アプリで使用される他の主要なアセット (アイコン、フォントなど)
 ];
 
-// 1. インストールイベント
-self.addEventListener('install', event => {
-  console.log('Service Worker installing (v3)...');
+// インストールイベント: アセットをキャッシュ
+self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache:', CACHE_NAME);
-        // PWAに必要なファイルをキャッシュ
-        return cache.addAll(urlsToCache);
-      })
-      .then(() => {
-        console.log('Core files cached successfully (v3).');
-        // 即座に有効化(activate)に進む
-        return self.skipWaiting();
-      })
-      .catch(err => {
-        console.error('Cache addAll failed (v3):', err);
+      .then((cache) => {
+        console.log('Opened cache');
+        // HTML内で定義されている全ての外部依存をここに追加する
+        return cache.addAll(urlsToCache).catch(err => {
+          console.error('Cache add failed:', err);
+        });
       })
   );
 });
 
-// 2. アクティベートイベント
-self.addEventListener('activate', event => {
-  console.log('Service worker activating (v3)...');
-  
-  // 即座にページを制御できるようにする
-  event.waitUntil(self.clients.claim()); 
-  
-  // 古いキャッシュ（v2など）を削除
-  const cacheWhitelist = [CACHE_NAME]; // v3 のみ残す
+// フェッチイベント: キャッシュからアセットを返す
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        // キャッシュ内に見つかった場合はそれを返す
+        if (response) {
+          return response;
+        }
+        // キャッシュにない場合はネットワークから取得
+        return fetch(event.request);
+      }
+    )
+  );
+});
+
+// アクティベートイベント: 古いキャッシュをクリア
+self.addEventListener('activate', (event) => {
+  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
-    caches.keys().then(cacheNames => {
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map(cacheName => {
+        cacheNames.map((cacheName) => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            // v3 以外のキャッシュを削除
-            console.log('Deleting old cache:', cacheName);
+            // ホワイトリストにない古いキャッシュを削除
             return caches.delete(cacheName);
           }
         })
       );
     })
-  );
-});
-
-// 3. フェッチイベント (Cache First, Network Fallback)
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') {
-    return;
-  }
-
-  event.respondWith(
-    // 1. まずキャッシュから探す
-    caches.match(event.request)
-      .then(cachedResponse => {
-        
-        // 2. キャッシュにあれば、それを返す
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-
-        // 3. キャッシュになければ、ネットワークに取りに行く
-        return fetch(event.request).then(
-          networkResponse => {
-            
-            // （オプション：インストール時以外に取得した音声ファイルなども動的にキャッシュする）
-            // 今回はインストールの確実性を優先し、必須ファイル以外はキャッシュしません。
-            
-            return networkResponse;
-          }
-        ).catch(error => {
-          console.warn('Fetch failed, resource not in cache:', event.request.url, error);
-        });
-      }
-    )
   );
 });
