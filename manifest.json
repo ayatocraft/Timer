@@ -1,9 +1,8 @@
 {
   "name": "Timer",
   "short_name": "Timer",
-  "description": "シンプルなタイマーアプリケーション",
-  "start_url": "/index.html",
+  "start_url": "/Timer/index.html",
   "display": "minimal-ui",
-  "background_color": "#000000",
-  "theme_color": "#4CAF50"
+  "background_color": "#ffffff",
+  "theme_color": "#007bff"
 }
