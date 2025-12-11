@@ -1,42 +1,38 @@
-const CACHE_NAME = 'full-clock-tool-v1';
+const CACHE_NAME = 'timer-cache-v1';
 const urlsToCache = [
-  './',
-  './index.html', // index.htmlと仮定
-  './style.css', // 外部CSSがあれば（今回はHTML内なので不要だがテンプレートとして）
-  // ... アプリで使用される他の主要なアセット (アイコン、フォントなど)
+  // GitHub Pagesのサブディレクトリ構成に合わせてパスを 
+  '/index.html',
+  'manifest.json',
+  // ★ 実際に使用しているCSS/JSファイル名に合わせてください ★
 ];
 
-// インストールイベント: アセットをキャッシュ
+// インストール: 必須アセットをキャッシュ
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Opened cache');
-        // HTML内で定義されている全ての外部依存をここに追加する
-        return cache.addAll(urlsToCache).catch(err => {
-          console.error('Cache add failed:', err);
-        });
+        console.log('Service Worker: Caching App Shell');
+        return cache.addAll(urlsToCache);
       })
   );
 });
 
-// フェッチイベント: キャッシュからアセットを返す
+// フェッチ: キャッシュ優先でリソースを提供
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // キャッシュ内に見つかった場合はそれを返す
+        // キャッシュ内にあればそれを返す
         if (response) {
           return response;
         }
-        // キャッシュにない場合はネットワークから取得
+        // なければネットワークから取得
         return fetch(event.request);
-      }
-    )
+      })
   );
 });
 
-// アクティベートイベント: 古いキャッシュをクリア
+// アクティベート: 古いキャッシュのクリーンアップ
 self.addEventListener('activate', (event) => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
@@ -44,7 +40,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            // ホワイトリストにない古いキャッシュを削除
+            console.log('Service Worker: Deleting old cache', cacheName);
             return caches.delete(cacheName);
           }
         })
