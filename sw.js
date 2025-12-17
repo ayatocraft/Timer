@@ -1,50 +1,40 @@
-const CACHE_NAME = 'timer-cache-v1';
-const urlsToCache = [
-  // GitHub Pagesのサブディレクトリ構成に合わせてパスを 
-  '/index.html',
-  'manifest.json',
-  // ★ 実際に使用しているCSS/JSファイル名に合わせてください ★
+const CACHE_NAME = "timer-cache-v1";
+
+const ASSETS = [
+  "/Timer/",
+  "/Timer/index.html",
+  "/Timer/manifest.json"
 ];
 
-// インストール: 必須アセットをキャッシュ
-self.addEventListener('install', (event) => {
+// インストール
+self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Service Worker: Caching App Shell');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.addAll(ASSETS);
+    })
   );
+  self.skipWaiting();
 });
 
-// フェッチ: キャッシュ優先でリソースを提供
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // キャッシュ内にあればそれを返す
-        if (response) {
-          return response;
-        }
-        // なければネットワークから取得
-        return fetch(event.request);
-      })
-  );
-});
-
-// アクティベート: 古いキャッシュのクリーンアップ
-self.addEventListener('activate', (event) => {
-  const cacheWhitelist = [CACHE_NAME];
+// 有効化
+self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then(keys => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            console.log('Service Worker: Deleting old cache', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
+        keys
+          .filter(key => key !== CACHE_NAME)
+          .map(key => caches.delete(key))
       );
+    })
+  );
+  self.clients.claim();
+});
+
+// フェッチ（Cache First）
+self.addEventListener("fetch", event => {
+  event.respondWith(
+    caches.match(event.request).then(response => {
+      return response || fetch(event.request);
     })
   );
 });
