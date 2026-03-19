@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>通知ボタン</title>
+</head>
+<body>
+  <h1>通知サンプル</h1>
+  <button id="notifyBtn">通知を出す</button>
+
+  <script>
+    const btn = document.getElementById("notifyBtn");
+
+    // ボタンを押したときの処理
+    btn.addEventListener("click", () => {
+      // まず通知権限を確認
+      if (Notification.permission === "granted") {
+        // 許可されていれば通知を表示
+        new Notification("こんにちは！これは通知です。");
+      } else if (Notification.permission !== "denied") {
+        // 権限が未設定の場合、リクエスト
+        Notification.requestPermission().then(permission => {
+          if (permission === "granted") {
+            new Notification("こんにちは！これは通知です。");
+          } else {
+            alert("通知が許可されませんでした");
+          }
+        });
+      } else {
+        // 権限拒否の場合
+        alert("通知がブロックされています");
+      }
+    });
+  </script>
+</body>
+</html>
