@@ -1,7 +1,7 @@
 {
-  "name": "Timer",
-  "short_name": "Timer",
-  "description": "Simple Timer (PWA)",
+  "name": "Nexis TimeSchedule",
+  "short_name": "TimeSchedule",
+  "description": "Timer App Nexis Group",
   "start_url": "/Timer/?pwa=1",
   "scope": "/Timer/",
   "display": "standalone",
