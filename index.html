@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0078d7" />
-<title>Full Clock Tool</title>
+<title>Nexis TimeSchedule</title>
 <style>
   /* Reset & base */
   * {
@@ -211,16 +211,18 @@
 </head>
 <body>
 <nav class="tabs" aria-label="メインナビゲーション">
-  <button id="tab-home" class="tab active" role="tab" aria-selected="true" tabindex="0">ホーム</button>
-  <button id="tab-timer" class="tab" role="tab" aria-selected="false" tabindex="-1">タイマー</button>
-  <button id="tab-alarm" class="tab" role="tab" aria-selected="false" tabindex="-1">アラーム</button>
-  <button id="tab-stopwatch" class="tab" role="tab" aria-selected="false" tabindex="-1">ストップウォッチ</button>
-  <button id="tab-settings" class="tab" role="tab" aria-selected="false" tabindex="-1">設定</button>
+  <button id="tab-home" class="tab active" role="tab" aria-selected="true" tabindex="0">Home</button>
+  <button id="tab-timer" class="tab" role="tab" aria-selected="false" tabindex="-1">Nexis Timer</button>
+  <button id="tab-alarm" class="tab" role="tab" aria-selected="false" tabindex="-1">Nexis Alarm</button>
+  <button id="tab-stopwatch" class="tab" role="tab" aria-selected="false" tabindex="-1">Nexis StopWatch</button>
+  <button id="tab-relax" class="tab">Nexis Relax</button>
+  <button id="tab-settings" class="tab" role="tab" aria-selected="false" tabindex="-1">Settings</button>
 </nav>
 
 <div style="flex-grow:1; display:flex; flex-direction:column;">
 <header>
   <button id="toggleTabsBtn" aria-label="タブの表示切替" aria-expanded="true">≡</button>
+  <div style="font-weight:bold;">Nexis TimeSchedule</div>
 </header>
 
 <main>
@@ -283,7 +285,15 @@
     </div>
     <div id="lapList" aria-live="polite" aria-label="ラップタイム一覧" tabindex="0"></div>
   </section>
-
+  <section id="relax" class="content">
+  <h1>Relax</h1>
+  <div style="text-align:center;margin-top:2rem;">
+    <button onclick="location.href='relax.html'" 
+      style="padding:1rem 2rem;font-size:1.2rem;">
+      リラックス開始
+    </button>
+  </div>
+</section>
   <section id="settings" class="content" role="tabpanel" aria-labelledby="tab-settings" tabindex="-1">
     <h1>設定</h1>
     <fieldset>
@@ -304,7 +314,7 @@
     </fieldset>
     <fieldset>
       <legend>About</legend>
-      <p>バージョン: build 25.11.17</p>
+      <p>バージョン: PublicBeta 26.1</p>
     </fieldset>
     <fieldset>
       <legend>タイマー音設定</legend>
@@ -315,6 +325,8 @@
           <option value="chime">チャイム</option>
           <option value="none">なし</option>
         </select>
+        <legend>アラーム音ファイル</legend>
+  <input type="file" id="alarmFile">
       </div>
     </fieldset>
     <fieldset>
@@ -326,6 +338,8 @@
           <option value="chime">チャイム</option>
           <option value="none">なし</option>
         </select>
+        <legend>アラーム音ファイル</legend>
+  <input type="file" id="alarmFile">
       </div>
     </fieldset>
     <div style="margin-top:1rem;">
@@ -398,7 +412,40 @@ if ("serviceWorker" in navigator) {
       }
     });
   });
+// --- IndexedDB ---
+let db;
+const req = indexedDB.open("NexisAudioDB", 1);
 
+req.onupgradeneeded = e => {
+  db = e.target.result;
+  db.createObjectStore("audio");
+};
+
+req.onsuccess = e => {
+  db = e.target.result;
+  loadAudioFromDB();
+};
+
+function saveAudio(key, file){
+  const tx = db.transaction("audio","readwrite");
+  tx.objectStore("audio").put(file, key);
+}
+
+function loadAudioFromDB(){
+  const tx = db.transaction("audio","readonly");
+  const store = tx.objectStore("audio");
+
+  store.get("timer").onsuccess = e=>{
+    if(e.target.result){
+      timerAudio.src = URL.createObjectURL(e.target.result);
+    }
+  };
+  store.get("alarm").onsuccess = e=>{
+    if(e.target.result){
+      alarmAudio.src = URL.createObjectURL(e.target.result);
+    }
+  };
+}
   // --- タブ表示・非表示切替 ---
   let tabsVisible = true;
   toggleTabsBtn.addEventListener('click', () => {
