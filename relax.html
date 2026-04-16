@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relax</title>
+
+<style>
+body{
+  margin:0;
+  overflow:hidden;
+}
+iframe{
+  position:fixed;
+  top:0;left:0;
+  width:100%;
+  height:100%;
+  border:none;
+}
+#clock{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  font-size:2rem;
+  font-weight:bold;
+  color:white;
+  text-shadow:0 0 10px black;
+}
+</style>
+</head>
+
+<body>
+
+<iframe src="https://ayatocraft.github.io/astronomy"></iframe>
+
+<div id="clock"></div>
+
+<script>
+let clickCount = 0;
+
+document.body.addEventListener("click",()=>{
+  clickCount++;
+  if(clickCount>=3){
+    location.href="index.html";
+  }
+});
+
+function updateClock(){
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,"0");
+  const m = String(now.getMinutes()).padStart(2,"0");
+  document.getElementById("clock").textContent = h+":"+m;
+}
+setInterval(updateClock,1000);
+updateClock();
+</script>
+
+</body>
+</html>
